@@ -1,3 +1,4 @@
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
@@ -12,9 +13,10 @@ android {
   namespace = "com.jubayerhossain.sobjidokan"
 
   compileSdk {
-    version = release(36) {
-      minorApiLevel = 1
-    }
+    version =
+      release(36) {
+        minorApiLevel = 1
+      }
   }
 
   defaultConfig {
@@ -53,7 +55,7 @@ android {
 
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
-        "proguard-rules.pro"
+        "proguard-rules.pro",
       )
 
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
