@@ -2,10 +2,15 @@ name: Android Release
 
 on:
   push:
-    tags: ['v*']
+    tags:
+      - 'v*'
 
 permissions:
   contents: read
+
+concurrency:
+  group: android-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
@@ -36,28 +41,32 @@ jobs:
         run: |
           set -euo pipefail
 
-          : "${KEYSTORE_BASE64:?Missing KEYSTORE_BASE64 secret}"
-          : "${STORE_PASSWORD:?Missing STORE_PASSWORD secret}"
-          : "${KEY_PASSWORD:?Missing KEY_PASSWORD secret}"
+          : "${KEYSTORE_BASE64:?Missing KEYSTORE_BASE64}"
+          : "${STORE_PASSWORD:?Missing STORE_PASSWORD}"
+          : "${KEY_PASSWORD:?Missing KEY_PASSWORD}"
 
-          export KEYSTORE_PATH="$RUNNER_TEMP/upload-key.jks"
-          trap 'rm -f "$KEYSTORE_PATH"' EXIT
+          trap 'rm -f sobjidokan-release.jks' EXIT
 
-          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          printf '%s' "$KEYSTORE_BASE64" \
+            | base64 --decode > sobjidokan-release.jks
 
-          keytool -list -keystore "$KEYSTORE_PATH" \
-            -storepass "$STORE_PASSWORD" -alias sobjidokan
+          test -s sobjidokan-release.jks
+
+          keytool -list \
+            -keystore sobjidokan-release.jks \
+            -storepass "$STORE_PASSWORD" \
+            -alias sobjidokan
 
           chmod +x gradlew
 
-          ./gradlew \
+          ./gradlew --no-daemon \
             :app:ktlintCheck \
             :app:detekt \
             :app:lintVitalRelease \
             :app:assembleRelease \
             :app:bundleRelease
 
-      - name: Upload Release Artifacts
+      - name: Upload Build Artifacts
         if: always()
         uses: actions/upload-artifact@v7
         with:
@@ -73,9 +82,28 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
-            app/build/outputs/apk/release/*.apk \
-            app/build/outputs/bundle/release/*.aab \
-            --verify-tag \
-            --title "Sobji Dokan $GITHUB_REF_NAME" \
-            --generate-notes
+          set -euo pipefail
+
+          shopt -s nullglob
+
+          apk_files=(app/build/outputs/apk/release/*.apk)
+          aab_files=(app/build/outputs/bundle/release/*.aab)
+
+          if (( ${#apk_files[@]} == 0 || ${#aab_files[@]} == 0 )); then
+            echo "::error::APK or AAB files are missing."
+            exit 1
+          fi
+
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" \
+              "${apk_files[@]}" \
+              "${aab_files[@]}" \
+              --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" \
+              "${apk_files[@]}" \
+              "${aab_files[@]}" \
+              --verify-tag \
+              --title "Sobji Dokan $GITHUB_REF_NAME" \
+              --generate-notes
+          fi

@@ -10,7 +10,12 @@ plugins {
 
 android {
   namespace = "com.jubayerhossain.sobjidokan"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+
+  compileSdk {
+    version = release(36) {
+      minorApiLevel = 1
+    }
+  }
 
   defaultConfig {
     applicationId = "com.jubayerhossain.sobjidokan"
@@ -26,12 +31,12 @@ android {
   // and updating Android apps in AI Studio.
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "$rootDir/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
+      storeFile = file("$rootDir/sobjidokan-release.jks")
+      storePassword = providers.environmentVariable("STORE_PASSWORD").orNull
       keyAlias = "sobjidokan"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      keyPassword = providers.environmentVariable("KEY_PASSWORD").orNull
     }
+
     create("debugConfig") {
       storeFile = file("$rootDir/debug.keystore")
       storePassword = "android"
@@ -45,31 +50,46 @@ android {
       isCrunchPngs = false
       isMinifyEnabled = true
       isShrinkResources = true
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+      )
+
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.
       signingConfig = signingConfigs.getByName("release")
     }
+
     debug {
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.
       signingConfig = signingConfigs.getByName("debugConfig")
     }
   }
+
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
   }
+
   buildFeatures {
     compose = true
     buildConfig = true
   }
-  testOptions { unitTests { isIncludeAndroidResources = true } }
+
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+    }
+  }
+
   lint {
     abortOnError = true
     checkReleaseBuilds = true
     explainIssues = true
   }
+
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true
@@ -91,7 +111,10 @@ ktlint {
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-  compilerOptions { allWarningsAsErrors.set(true) }
+  compilerOptions {
+    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    allWarningsAsErrors.set(true)
+  }
 }
 
 dependencies {
@@ -114,18 +137,22 @@ dependencies {
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.core)
   implementation(libs.kotlinx.serialization.json)
+
   testImplementation(libs.androidx.compose.ui.test.junit4)
   testImplementation(libs.androidx.core)
   testImplementation(libs.androidx.junit)
   testImplementation(libs.junit)
   testImplementation(libs.kotlinx.coroutines.test)
   testImplementation(libs.robolectric)
+
   androidTestImplementation(platform(libs.androidx.compose.bom))
   androidTestImplementation(libs.androidx.compose.ui.test.junit4)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.runner)
+
   debugImplementation(libs.androidx.compose.ui.test.manifest)
   debugImplementation(libs.androidx.compose.ui.tooling)
+
   add("ksp", libs.androidx.room.compiler)
 }
