@@ -46,7 +46,7 @@ jobs:
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
 
           keytool -list -keystore "$KEYSTORE_PATH" \
-            -storepass "$STORE_PASSWORD" -alias upload
+            -storepass "$STORE_PASSWORD" -alias sobjidokan
 
           chmod +x gradlew
 
