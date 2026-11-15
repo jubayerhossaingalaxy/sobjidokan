@@ -1,0 +1,81 @@
+name: Android Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: android-release
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Build Signed APK and AAB
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          : "${KEYSTORE_BASE64:?Missing KEYSTORE_BASE64 secret}"
+          : "${STORE_PASSWORD:?Missing STORE_PASSWORD secret}"
+          : "${KEY_PASSWORD:?Missing KEY_PASSWORD secret}"
+
+          export KEYSTORE_PATH="$RUNNER_TEMP/upload-key.jks"
+          trap 'rm -f "$KEYSTORE_PATH"' EXIT
+
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+
+          keytool -list -keystore "$KEYSTORE_PATH" \
+            -storepass "$STORE_PASSWORD" -alias upload
+
+          chmod +x gradlew
+
+          ./gradlew \
+            :app:ktlintCheck \
+            :app:detekt \
+            :app:lintVitalRelease \
+            :app:assembleRelease \
+            :app:bundleRelease
+
+      - name: Upload Release Artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: sobji-dokan-release-${{ github.ref_name }}
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+            app/build/reports/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            app/build/outputs/apk/release/*.apk \
+            app/build/outputs/bundle/release/*.aab \
+            --verify-tag \
+            --title "Sobji Dokan $GITHUB_REF_NAME" \
+            --generate-notes

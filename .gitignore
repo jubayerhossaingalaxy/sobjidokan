@@ -1,0 +1,17 @@
+node_modules/
+*.tgz
+.env
+.DS_Store
+coverage/
+.tmp/
+dist/
+
+# Gradle & Android
+.gradle/
+**/build/
+
+# Local Android SDK and signing files
+local.properties
+debug.keystore
+*.keystore
+*.jks

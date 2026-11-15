@@ -1,0 +1,15 @@
+{
+  "name": "sobji-dokan-tooling",
+  "private": true,
+  "description": "Formatter for the Sobji Dokan Android app",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "3.10.1"
+  },
+  "dependencies": {
+    "markdownlint-cli2": "^0.24.1"
+  }
+}

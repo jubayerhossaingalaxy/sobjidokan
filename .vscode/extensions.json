@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    "JetBrains.kotlin-server",
+    "vscjava.vscode-gradle",
+    "esbenp.prettier-vscode",
+    "richardwillis.vscode-spotless-gradle",
+    "redhat.vscode-xml",
+    "redhat.vscode-yaml",
+    "tamasfe.even-better-toml",
+    "redhat.java",
+    "vscjava.vscode-java-debug",
+    "vscjava.vscode-java-test",
+    "EditorConfig.EditorConfig",
+    "GitHub.vscode-github-actions",
+    "jimeh.actionlint"
+  ],
+  "unwantedRecommendations": []
+}
